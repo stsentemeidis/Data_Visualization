@@ -59,11 +59,11 @@
       if(error) { throw error; };
 
       // Creates variable for the dropDown as selected by the user
-      // As the user hovers, the field selected is highlighted=
+      // As the user hovers, the field selected is highlighted
       var dropDown = d3.select("#user").on("change", highlightUser);
 
       // The user defines one option from the dropDown and selects
-      // the column from the data set corresponding to the dropDown option.
+      // the column from the data set corresponding to the dropDown options.
       // The text shows the data corresponding to the selection.
       dropDown.selectAll("option")
       .data(data)
@@ -72,7 +72,7 @@
       .attr("value", function(d) { return d.User; })
       .text(function(d) { return d.User; });
 
-      // With d3 function max, the code defines two maximum values for
+      // With d3 function max, the code finds two maximum values for
       // two variables.
       maxVideoViews = d3.max(data, function(d){ return d.VideoViews; });
       maxSubscribers = d3.max(data, function(d){ return d.Subscribers; });
@@ -95,12 +95,12 @@
     // Function used to highlight figures for a specific user.
     function highlightUser() {
 
-      // NOT SURE YET...
+      // Allow the selection of data points when hovering or selecting in dropdown
       var sel = document.getElementById('user');
       var selectedUser = sel.options[sel.selectedIndex].value;
 
       // Select the circles and adjust the opacity if the user is selected:
-      // - if selected, the circle won't be transparent.
+      // - if selected, the circle won't be transparent (value 1).
       // - if not selected, the circle will be transparent (value 0.2).
       d3.selectAll("circle")
       .style("opacity", function(d) { return d.User==selectedUser ? 1 : 0.2; });
@@ -113,9 +113,9 @@
         return d.User==selectedUser ? focusRadius : radius;
       });
 
-      // Select the 'user allows shown' circles and adjust the colour if the user is selected:
-      // - if selected, the circle will use the colour black.
-      // - if not selected, the circle will use the colour white.
+      // Select the 'user allows shown' labels and adjust the colour if the user is selected:
+      // - if selected, the label will use the colour black.
+      // - if not selected, the label will use the colour white.
       d3.selectAll(".user-label-always-shown")
       .style("fill", function(d) {
         return d.User==selectedUser ? "black": "white";
@@ -125,7 +125,7 @@
       // by default
       var labels = d3.selectAll(".user-label").style("visibility", "hidden");
 
-      // Display the labels for the selected part
+      // Display the labels for the selected data points
       labels.filter(function(d) { return d.User==selectedUser; })
       .style("visibility", "inherit");
 
