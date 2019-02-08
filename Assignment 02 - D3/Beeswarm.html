@@ -141,7 +141,8 @@
       var margin;
 
       // If the rating given is 'A-plus', margins take certain values that
-      // makes the 'A-plus' graph slightly taller than for other ratings
+      // makes the 'A-plus' graph slightly taller than for other ratings,
+      // allowing the user to see the top axis and the titles
       if (className == ".A-plus") {
         margin = {"top": 50, "left": 150, "right": 130, "bottom": 0,}
       } else {
@@ -151,7 +152,6 @@
       // Defining maximum ratings, specifically for the rating  category
       // that is input in the drawChart function.
       var maxVideoViewsRating = d3.max(data, function(d){ return d.VideoViews; });
-
       var maxSubscribersRating = d3.max(data, function(d){ return d.Subscribers; });
 
       // Picks up the sections of the page that correspond to each rating category,
@@ -161,11 +161,10 @@
        .attr("width", width + margin.right + margin.left)
        .attr("height", height + margin.top + margin.bottom);
 
-       // if the rating is 'A-plus',
-
+      // if the rating is 'A-plus',
       if (className == ".A-plus") {
 
-        // 3 svgs will create text; Rating, Views, and Subscribers.
+        // 3 svgs will create text: Rating, Views, and Subscribers.
         // 1st svg titled as 'Rating', with coordinates (0,20);
         // the 'Rating' title will be at the top of the page.
         // The text will be aligned left.
@@ -176,7 +175,7 @@
         .attr("y", 20)
         .style("text-anchor", "start");
 
-        // the 'Views' title will be at the top and center of the page.
+        // The 'Views' title will be at the top and center of the page.
         // The text will be aligned in the center.
         svg.append("text")
         .text("Views (billions)")
@@ -185,7 +184,7 @@
         .attr("y", 20)
         .style("text-anchor", "middle");
 
-        // the 'Subscribers' title will be at the top and right of the page.
+        // The 'Subscribers' title will be at the top and right of the page.
         // The text will be aligned in the center.
         svg.append("text")
         .text("Subscribers (millions)")
@@ -214,14 +213,14 @@
       .style("fill", "black");
 
       // Defining the scaling parameters for the video views; it is a linear scale;
-      // The area for scaling is half of the previously defined 'width' variable.
+      // the area for scaling is half of the previously defined 'width' variable.
       // The scaling will apply from 0 to the maximum number of views.
 			var scaleVideoViews = d3.scaleLinear()
       .range([0,width/2])
       .domain([0,maxVideoViews]);
 
-      // It places the axis of each graph on the top; the data is scaled with the previous function,
-      // and formats numbers with 'Bn' for billions after the number.
+      // It places the axis of each graph on the top; the data is scaled with the
+      // previous function, and formats numbers with 'Bn' for billions after the number.
       var xAxisVideoViews =  d3.axisTop(scaleVideoViews).tickFormat(formatBillions);
 
       // Defining the x-axes for all the different graphs showing views.
@@ -229,22 +228,23 @@
     	.attr("transform", "translate(" + (margin.left/2) + "," + margin.top + ")")
     	.call(xAxisVideoViews);
 
-      //This variable is used to place all elements in the right position inside the svg
+      // This variable is used to place all elements in the right position inside the svg
       var gVideoViews = svg.append("g")
       .attr("transform", "translate(" + (margin.left/2) + "," + margin.top + ")");
 
-      // This variable is used to create the beewarm graph, force function group all the dots together to have the final graph
+      // This variable is used to create the beeswarm graph,
+      // force function grouping all the dots together to have the final graph
       var simulationVideoViews = d3.forceSimulation(data)
       .force("x", d3.forceX(function(d) { return scaleVideoViews(d.VideoViews); }).strength(1))
       .force("y", d3.forceY(height/2))
       .force("collide", d3.forceCollide(radius + 0.5))
       .stop();
 
-      //For loop that defines where the ticks are placed
+      // For loop that defines where the ticks are placed
       for (var i = 0; i < 120; ++i) simulationVideoViews.tick();
 
-      //Reads the data and defines if the data points should be highlighted or not by default
-      //(Belongs to "A-plus" group or is the maximum of each group)
+      // Reads the data and defines if the data points should be highlighted or not by default
+      // (belongs to "A-plus" group or is the maximum of each group)
       var circlesVideoViews = gVideoViews.selectAll("g")
       .data(data)
       .enter()
@@ -258,9 +258,10 @@
       })
       .attr("transform", function(d) { return "translate(" + d.x + "," + d.y +")"; });
 
-     //Calling the previous variable named "circlesVideoViews", depending on the class or the maxVideoViewsRating
-     //the size of the circle in the graph is defined
-     //Also the style is defined for these variables
+     // Calling the previous variable named "circlesVideoViews".
+     // The size of the circle in the graph is defined
+     // depending on the class or the maxVideoViewsRating.
+     // Also the style is defined for these variables
       circlesVideoViews.append("circle")
       .attr("r", function(d){
         if (d.Rating == "A-plus" || d.VideoViews == maxVideoViewsRating ) {
@@ -274,7 +275,8 @@
       .style("fill", "DarkSlateBlue")
       .style("fill-opacity", 0.7 );
 
-      //When one of the circles is selected the label that describes the user selection is shown
+      // When one of the circles is selected,
+      // the label that describes the user selection is shown
        circlesVideoViews.append("text")
       .text(function(d){ return d.User; })
       .attr("class", function(d) {
@@ -285,9 +287,12 @@
           };
 
       })
-      //The x and y coordinates are defined for placing the labels of the specific user selection ("DanTDM" and "PopularMMOs")
-      //and the common coordinates for the rest of the users. Also, is set when they are shown or hidden and
-      //finally when a circle is selected where the label is placed in the svg.
+
+      // The x and y coordinates are defined for placing the labels of
+      // specific data points ("DanTDM" and "PopularMMOs") and the common
+      // coordinates for the rest of the users. Also, it sets when they are
+      // shown or hidden and finally when a circle is selected where
+      // the label is placed in the svg.
       .attr("x", function(d) {
         if (d.User == "DanTDM" || d.User == "PopularMMOs") {
           return 0;
@@ -314,13 +319,13 @@
       });
 
       // Defining the scaling parameters for the Subscribers; it is a linear scale;
-      // The area for scaling is half of the previously defined 'width' variable.
+      // the area for scaling is half of the previously defined 'width' variable.
       // The scaling will apply from 0 to the maximum number of Subscribers.
       var scaleSubscribers = d3.scaleLinear()
       .range([0,width/2])
       .domain([0,maxSubscribers]);
 
-      //This variable is used to place all elements in the right position inside the svg
+      // This variable is used to place all elements in the right position inside the svg
       var gSubscribers = svg.append("g")
       .attr("transform", "translate(" + (margin.left + width/2) + "," + margin.top + ")");
 
@@ -332,18 +337,19 @@
     	.attr("transform", "translate(" + (margin.left + (width/2)) + "," + margin.top + ")")
     	.call(xAxisSubscribers);
 
-      // This variable is used to create the beewarm graph, force function group all the dots together to have the final graph
+      // This variable is used to create the beeswarm graph,
+      // force function grouping all the dots together to have the final graph
       var simulationSubscribers = d3.forceSimulation(data)
       .force("x", d3.forceX(function(d) { return scaleSubscribers(d.Subscribers); }).strength(1))
       .force("y", d3.forceY(height/2))
       .force("collide", d3.forceCollide(radius + 0.5))
       .stop();
 
-      //For loop that defines where the ticks are placed
+      // For loop that defines where the ticks are placed
       for (var i = 0; i < 120; ++i) simulationSubscribers.tick();
 
-      //Reads the data and defines if the data points should be highlighted or not by default
-      //(Belongs to "A-plus" group or is the maximum of each group)
+      // Reads the data and defines if the data points should be highlighted or not by default
+      // (Belongs to "A-plus" group or is the maximum of each group)
       var circlesSubscribers = gSubscribers.selectAll("g")
       .data(data)
       .enter()
@@ -357,9 +363,10 @@
       })
       .attr("transform", function(d) { return "translate(" + d.x + "," + d.y +")"; });
 
-      //Calling the previous variable named "circlesSubscribers", depending on the class or the maxSubscribersRating
-      //the size of the circle in the grapgh is defined
-      //Also the style is defined for these variables
+      // Calling the previous variable named "circlesSubscribers",
+      // The size of the circle in the grapgh is defined
+      // depending on the class or the maxSubscribersRating.
+      // Also the style is defined for these variables.
       circlesSubscribers.append("circle")
       .attr("r", function(d){
         if (d.Rating == "A-plus" || d.Subscribers == maxSubscribersRating ) {
@@ -373,7 +380,8 @@
       .style("fill", "Tomato")
       .style("fill-opacity", 0.7 );
 
-      //When one of the circles is selected the label that describes the user selection is shown
+      // When one of the circles is selected the label that describes
+      // the user selection is shown
       circlesSubscribers.append("text")
       .text(function(d){ return d.User; })
       .attr("class", function(d) {
@@ -384,9 +392,12 @@
         };
 
       })
-      //The x and y coordinates are defined for placing the labels of the specific user selection ("DanTDM" and "PopularMMOs")
-      //and the common coordinates for the rest of the users. Also, is set when they are shown or hidden and
-      //finally when a circle is selected where the label is plcen in the svg.
+
+      // The x and y coordinates are defined for placing the labels of
+      // specific data points ("DanTDM" and "PopularMMOs") and the common
+      // coordinates for the rest of the users. Also, it sets when they are
+      // shown or hidden and finally when a circle is selected
+      // where the label is placed in the svg.
       .attr("x", function(d) {
         if (d.User == "DanTDM" || d.User == "PopularMMOs") {
           return 0;
@@ -412,16 +423,16 @@
         };
       });
 
-      // Interactivity Part;
-      // If you hover on a dot:
-      // All the corresponding data points are highlighted
+      // Interactivity Part: if you hover on a dot,
+      // all the corresponding data points are highlighted.
       d3.selectAll("circle")
       .on("mouseover", function(d){
         d3.select("#user").property('value', d.User);
         highlightUser();
       })
+
       // When the mouse is removed from the specific dot,
-      // it reverts to the initial state
+      // it reverts to the initial state.
       .on("mouseout", function(d){
         d3.selectAll("circle").style("opacity", 0.7);
         d3.selectAll(".user-circle").selectAll("circle").attr("r", radius);
