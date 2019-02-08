@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<!-- HTML Structure -->
+<head>
+  <meta charset="utf-8">
+  <!-- Load D3 Script -->
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <!-- CSS instructions -->
+  <style>
+  /* The page is set without margin. */
+  /* All text will use the font 'sans-serif'. */
+    body { margin:0;position:fixed;top:0;right:0;bottom:0;left:0; font-family: sans-serif; }
+    /* Class 'domain' will not be displayed. */
+    .domain { display: none; }
+    /* All text will use the font 'sans-serif'. */
+    /* Ticks text and shape will be grey. */
+    .tick text, .axis-label { fill: #808080 }
+    .tick line { stroke: #808080; shape-rendering: crispEdges; }
+  </style>
+</head>
+
+
+<!-- Start building the page body. -->
+<body>
+  <select id="user"></select>
+
+  <!-- Divides the page in 7 sections. -->
+  <div class="A-plus"></div>
+  <div class="A"></div>
+  <div class="A-minus"></div>
+  <div class="B-plus"></div>
+  <div class="B"></div>
+  <div class="B-minus"></div>
+  <div class="C-and-D"></div>
+
+  <!-- Start of D3 Script. -->
+  <script>
+
+    // Define some variables to store the maximums of the data.
+    var maxVideoViews;
+    var maxSubscribers;
+    // Define the variables storing the sizes of the points.
+    var radius = 2;
+    var focusRadius = 5;
+
+    // Function setting the display of numbers for billions (0bn).
+    function formatBillions(d) {
+      var roundedNumber = Math.round(d/1000000000);
+      return roundedNumber + "bn";
+    };
+
+    // Function setting the display of numbers for millions (0m).
+    function formatMillions(d) {
+      var roundedNumber = Math.round(d/1000000);
+      return roundedNumber + "m";
+    };
+
+    // Read the data from the file data.csv.
+    d3.csv("data.csv", convertTextToNumbers, function(error, data) {
+      if(error) { throw error; };
+
+      // Creates variable for the dropDown as selected by the user
+      // As the user hovers, the field selected is highlighted=
+      var dropDown = d3.select("#user").on("change", highlightUser);
+
+      // The user defines one option from the dropDown and selects
+      // the column from the data set corresponding to the dropDown option.
+      // The text shows the data corresponding to the selection.
+      dropDown.selectAll("option")
+      .data(data)
+      .enter()
+      .append("option")
+      .attr("value", function(d) { return d.User; })
+      .text(function(d) { return d.User; });
+
+      // With d3 function max, the code defines two maximum values for
+      // two variables.
+      maxVideoViews = d3.max(data, function(d){ return d.VideoViews; });
+      maxSubscribers = d3.max(data, function(d){ return d.Subscribers; });
+
+      // Creating a flat data set into a nested data set for every rating
+      var nestedData = d3.nest()
+      .key(function(d){ return d.Rating; })
+      .entries(data);
+
+      // For each nested data, the code is creating a chart
+      // for each different category of rating.
+      nestedData.forEach(function(d) {
+        drawChart(d.key, d.values);
+      });
+
+
+    });
+
+
+    // Function used to highlight figures for a specific user.
+    function highlightUser() {
+
+      // NOT SURE YET...
+      var sel = document.getElementById('user');
+      var selectedUser = sel.options[sel.selectedIndex].value;
+
+      // Select the circles and adjust the opacity if the user is selected:
+      // - if selected, the circle won't be transparent.
+      // - if not selected, the circle will be transparent (value 0.2).
+      d3.selectAll("circle")
+      .style("opacity", function(d) { return d.User==selectedUser ? 1 : 0.2; });
+
+      // Select the 'simple user' circles and adjust the size if the user is selected:
+      // - if selected, the circle will use the focus radius (value 5).
+      // - if not selected, the circle will use the normal radius (value 2).
+      d3.selectAll(".user-circle").selectAll("circle")
+      .attr("r", function(d) {
+        return d.User==selectedUser ? focusRadius : radius;
+      });
+
+      // Select the 'user allows shown' circles and adjust the colour if the user is selected:
+      // - if selected, the circle will use the colour black.
+      // - if not selected, the circle will use the colour white.
+      d3.selectAll(".user-label-always-shown")
+      .style("fill", function(d) {
+        return d.User==selectedUser ? "black": "white";
+      });
+
+      // Select the 'user label' class and make all labels to hidden
+      // by default
+      var labels = d3.selectAll(".user-label").style("visibility", "hidden");
+
+      // Display the labels for the selected part
+      labels.filter(function(d) { return d.User==selectedUser; })
+      .style("visibility", "inherit");
+
+    };
+
+    // Defining a function that creates the chart for each rating contained in the data set
+    function drawChart(key, data) {
+
+      // Defining 4 variables to be used later
+      var className = "." + key;
+      var width = 600;
+      var height = 95;
+      var margin;
+
+      // If the rating given is 'A-plus', margins take certain values that
+      // makes the 'A-plus' graph slightly taller than for other ratings
+      if (className == ".A-plus") {
+        margin = {"top": 50, "left": 150, "right": 130, "bottom": 0,}
+      } else {
+        margin = {"top": 20, "left": 150, "right": 130, "bottom": 0,}
+      };
+
+      // Defining maximum ratings, specifically for the rating  category
+      // that is input in the drawChart function.
+      var maxVideoViewsRating = d3.max(data, function(d){ return d.VideoViews; });
+
+      var maxSubscribersRating = d3.max(data, function(d){ return d.Subscribers; });
+
+      // Picks up the sections of the page that correspond to each rating category,
+      // and within each section's svg, defines the margin areas.
+      var div = d3.select(className).append("div")
+      var svg = div.append("svg")
+       .attr("width", width + margin.right + margin.left)
+       .attr("height", height + margin.top + margin.bottom);
+
+       // if the rating is 'A-plus',
+
+      if (className == ".A-plus") {
+
+        // 3 svgs will create text; Rating, Views, and Subscribers.
+        // 1st svg titled as 'Rating', with coordinates (0,20);
+        // the 'Rating' title will be at the top of the page.
+        // The text will be aligned left.
+        svg.append("text")
+        .text("Rating")
+        .attr("class", "axis-label")
+        .attr("x", 0)
+        .attr("y", 20)
+        .style("text-anchor", "start");
+
+        // the 'Views' title will be at the top and center of the page.
+        // The text will be aligned in the center.
+        svg.append("text")
+        .text("Views (billions)")
+        .attr("class", "axis-label")
+        .attr("x", (margin.left/2) + width/4)
+        .attr("y", 20)
+        .style("text-anchor", "middle");
+
+        // the 'Subscribers' title will be at the top and right of the page.
+        // The text will be aligned in the center.
+        svg.append("text")
+        .text("Subscribers (millions)")
+        .attr("class", "axis-label")
+        .attr("x", (margin.left + width/2) + width/4)
+        .attr("y", 20)
+        .style("text-anchor", "middle");;
+
+      };
+
+      // Getting rid of the '-' in the 'Ratings' titles
+      // The text will be black.
+      svg.append("text")
+      .text(key.replace("-", " "))
+      .attr("x", 0)
+      .attr("y", margin.top + height/2)
+      .style("fill", "black");
+
+      // The code is appending the number of entries in each
+      // rating (or key) as 'n = <something>'
+      // The text will be black.
+      svg.append("text")
+      .text("(n=" +data.length+")")
+      .attr("x", 0)
+      .attr("y", margin.top + height/2 + 16)
+      .style("fill", "black");
+
+      // Defining the scaling parameters for the video views; it is a linear scale;
+      // The area for scaling is half of the previously defined 'width' variable.
+      // The scaling will apply from 0 to the maximum number of views.
+			var scaleVideoViews = d3.scaleLinear()
+      .range([0,width/2])
+      .domain([0,maxVideoViews]);
+
+      // It places the axis of each graph on the top; the data is scaled with the previous function,
+      // and formats numbers with 'Bn' for billions after the number.
+      var xAxisVideoViews =  d3.axisTop(scaleVideoViews).tickFormat(formatBillions);
+
+      // Defining the x-axes for all the different graphs showing views.
+      var gXAxisVideoViews = svg.append("g")
+    	.attr("transform", "translate(" + (margin.left/2) + "," + margin.top + ")")
+    	.call(xAxisVideoViews);
+
+      //This variable is used to place all elements in the right position inside the svg
+      var gVideoViews = svg.append("g")
+      .attr("transform", "translate(" + (margin.left/2) + "," + margin.top + ")");
+
+      // This variable is used to create the beewarm graph, force function group all the dots together to have the final graph
+      var simulationVideoViews = d3.forceSimulation(data)
+      .force("x", d3.forceX(function(d) { return scaleVideoViews(d.VideoViews); }).strength(1))
+      .force("y", d3.forceY(height/2))
+      .force("collide", d3.forceCollide(radius + 0.5))
+      .stop();
+
+      //For loop that defines where the ticks are placed
+      for (var i = 0; i < 120; ++i) simulationVideoViews.tick();
+
+      //Reads the data and defines if the data points should be highlighted or not by default
+      //(Belongs to "A-plus" group or is the maximum of each group)
+      var circlesVideoViews = gVideoViews.selectAll("g")
+      .data(data)
+      .enter()
+      .append("g")
+      .attr("class", function(d) {
+          if (d.Rating == "A-plus" || d.VideoViews == maxVideoViewsRating ) {
+            return "user-circle-always-shown";
+          } else {
+            return "user-circle";
+          }
+      })
+      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y +")"; });
+
+     //Calling the previous variable named "circlesVideoViews", depending on the class or the maxVideoViewsRating
+     //the size of the circle in the graph is defined
+     //Also the style is defined for these variables
+      circlesVideoViews.append("circle")
+      .attr("r", function(d){
+        if (d.Rating == "A-plus" || d.VideoViews == maxVideoViewsRating ) {
+            return focusRadius;
+          } else {
+            return radius;
+          };
+      })
+      .attr("cx", 0)
+      .attr("cy", 0)
+      .style("fill", "DarkSlateBlue")
+      .style("fill-opacity", 0.7 );
+
+      //When one of the circles is selected the label that describes the user selection is shown
+       circlesVideoViews.append("text")
+      .text(function(d){ return d.User; })
+      .attr("class", function(d) {
+          if (d.Rating == "A-plus" || d.VideoViews == maxVideoViewsRating ) {
+            return "user-label-always-shown";
+          } else {
+            return "user-label";
+          };
+
+      })
+      //The x and y coordinates are defined for placing the labels of the specific user selection ("DanTDM" and "PopularMMOs")
+      //and the common coordinates for the rest of the users. Also, is set when they are shown or hidden and
+      //finally when a circle is selected where the label is placed in the svg.
+      .attr("x", function(d) {
+        if (d.User == "DanTDM" || d.User == "PopularMMOs") {
+          return 0;
+        } else {
+          return 6;
+        };
+      })
+      .attr("y", function(d) {
+        if (d.User == "DanTDM") {
+          return -10;
+        } else if (d.User == "PopularMMOs") {
+          return 20;
+        } else {
+          return 5;
+        };
+      })
+      .attr("text-anchor", "start")
+      .style("visibility", function(d){
+        if (d.Rating == "A-plus" || d.VideoViews == maxVideoViewsRating ) {
+          return;
+        } else {
+          return "hidden";
+        };
+      });
+
+      // Defining the scaling parameters for the Subscribers; it is a linear scale;
+      // The area for scaling is half of the previously defined 'width' variable.
+      // The scaling will apply from 0 to the maximum number of Subscribers.
+      var scaleSubscribers = d3.scaleLinear()
+      .range([0,width/2])
+      .domain([0,maxSubscribers]);
+
+      //This variable is used to place all elements in the right position inside the svg
+      var gSubscribers = svg.append("g")
+      .attr("transform", "translate(" + (margin.left + width/2) + "," + margin.top + ")");
+
+      // Defining the x-axes for all the different graphs showing Subscribers.
+      var xAxisSubscribers = d3.axisTop(scaleSubscribers).tickFormat(formatMillions);
+
+      // Defining the x-axes for all the different graphs showing Subscribers.
+      var gXAxisSubscribers = svg.append("g")
+    	.attr("transform", "translate(" + (margin.left + (width/2)) + "," + margin.top + ")")
+    	.call(xAxisSubscribers);
+
+      // This variable is used to create the beewarm graph, force function group all the dots together to have the final graph
+      var simulationSubscribers = d3.forceSimulation(data)
+      .force("x", d3.forceX(function(d) { return scaleSubscribers(d.Subscribers); }).strength(1))
+      .force("y", d3.forceY(height/2))
+      .force("collide", d3.forceCollide(radius + 0.5))
+      .stop();
+
+      //For loop that defines where the ticks are placed
+      for (var i = 0; i < 120; ++i) simulationSubscribers.tick();
+
+      //Reads the data and defines if the data points should be highlighted or not by default
+      //(Belongs to "A-plus" group or is the maximum of each group)
+      var circlesSubscribers = gSubscribers.selectAll("g")
+      .data(data)
+      .enter()
+      .append("g")
+      .attr("class", function(d) {
+          if (d.Rating == "A-plus" || d.Subscribers == maxSubscribersRating ) {
+            return "user-circle-always-shown";
+          } else {
+            return "user-circle";
+          }
+      })
+      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y +")"; });
+
+      //Calling the previous variable named "circlesSubscribers", depending on the class or the maxSubscribersRating
+      //the size of the circle in the grapgh is defined
+      //Also the style is defined for these variables
+      circlesSubscribers.append("circle")
+      .attr("r", function(d){
+        if (d.Rating == "A-plus" || d.Subscribers == maxSubscribersRating ) {
+            return focusRadius;
+          } else {
+            return radius;
+          };
+      })
+      .attr("cx", 0)
+      .attr("cy", 0)
+      .style("fill", "Tomato")
+      .style("fill-opacity", 0.7 );
+
+      //When one of the circles is selected the label that describes the user selection is shown
+      circlesSubscribers.append("text")
+      .text(function(d){ return d.User; })
+      .attr("class", function(d) {
+        if (d.Rating == "A-plus" || d.Subscribers == maxSubscribersRating ) {
+          return "user-label-always-shown";
+        } else {
+          return "user-label";
+        };
+
+      })
+      //The x and y coordinates are defined for placing the labels of the specific user selection ("DanTDM" and "PopularMMOs")
+      //and the common coordinates for the rest of the users. Also, is set when they are shown or hidden and
+      //finally when a circle is selected where the label is plcen in the svg.
+      .attr("x", function(d) {
+        if (d.User == "DanTDM" || d.User == "PopularMMOs") {
+          return 0;
+        } else {
+          return 6;
+        };
+      })
+      .attr("y", function(d) {
+        if (d.User == "DanTDM") {
+          return -10;
+        } else if (d.User == "PopularMMOs") {
+          return 20;
+        } else {
+          return 5;
+        };
+      })
+      .style("text-anchor", "start")
+      .style("visibility", function(d){
+        if (d.Rating == "A-plus" || d.Subscribers == maxSubscribersRating ) {
+          return "inherit";
+        } else {
+          return "hidden";
+        };
+      });
+
+      // Interactivity Part;
+      // If you hover on a dot:
+      // All the corresponding data points are highlighted
+      d3.selectAll("circle")
+      .on("mouseover", function(d){
+        d3.select("#user").property('value', d.User);
+        highlightUser();
+      })
+      // When the mouse is removed from the specific dot,
+      // it reverts to the initial state
+      .on("mouseout", function(d){
+        d3.selectAll("circle").style("opacity", 0.7);
+        d3.selectAll(".user-circle").selectAll("circle").attr("r", radius);
+        d3.selectAll(".user-label-always-shown").style("fill", "black");
+        d3.selectAll(".user-label").style("visibility", "hidden").style;
+      });
+
+    }
+
+    // Function ensuring the values in the numeric columns
+    // of the data file are read as numbers.
+    function convertTextToNumbers(d) {
+        d.Rank = +d.Rank;
+        d.Subscribers = +d.Subscribers;
+        d.VideoViews = +d.VideoViews;
+        return d;
+    };
+
+  </script>  <!-- Closing the D3 Script. -->
+</body> <!-- Closing the page body built. -->
