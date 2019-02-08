@@ -55,7 +55,7 @@
     };
 
     // Read the data from the file data.csv.
-    d3.csv("data.csv", convertTextToNumbers, function(error, data) {
+    d3.csv("https://raw.githubusercontent.com/ashomah/Data-Vizualization-Course/master/Assignment%2002%20-%20D3/data.csv", convertTextToNumbers, function(error, data) {
       if(error) { throw error; };
 
       // Creates variable for the dropDown as selected by the user
