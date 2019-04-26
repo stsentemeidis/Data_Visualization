@@ -1,4 +1,4 @@
-# Data-Vizualization
+# Data Vizualization
 
 This file consists of **4 different projects** on Data Visualization, developed during the IE MBD '18 program. The 4 are:    
 
